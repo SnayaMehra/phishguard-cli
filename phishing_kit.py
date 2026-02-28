@@ -16,11 +16,11 @@ This module demonstrates HOW phishing kits are built so defenders can:
 
 import hashlib
 import datetime
+import base64
+from urllib.parse import urlparse
 from pathlib import Path
 
-# ──────────────────────────────────────────────────────────────────────────────
 #  CONSTANTS
-# ──────────────────────────────────────────────────────────────────────────────
 
 LOOT_FILE   = Path("phishkit_loot.json")
 LOG_FILE    = Path("phishkit_log.txt")
@@ -37,9 +37,7 @@ BRAND_TEMPLATES = {
     "7": "Custom",
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
 #  LURE EMAIL GENERATOR
-# ──────────────────────────────────────────────────────────────────────────────
 
 LURE_TEMPLATES = {
     "Credential Reset": {
@@ -154,3 +152,74 @@ def generate_lure_email(brand: str, link: str, template_name: str) -> dict:
         "body":     body,
         "red_flags": template["red_flags"],
     }
+
+
+#  OBFUSCATION TECHNIQUES DEMONSTRATOR
+
+
+def demonstrate_obfuscation(url: str):
+    """Show various URL obfuscation techniques attackers use."""
+    parsed = urlparse(url if "://" in url else "https://" + url)
+    domain = parsed.netloc or parsed.path.split("/")[0]
+    path   = parsed.path if parsed.netloc else ""
+
+    techniques = []
+
+    # 1. Base64 encode the whole URL
+    b64 = base64.urlsafe_b64encode(url.encode()).decode()
+    techniques.append({
+        "name":    "Base64 encoding",
+        "result":  f"https://decode-b64.run/?q={b64}",
+        "purpose": "Hides the actual URL from email scanners and human inspection",
+    })
+
+    # 2. URL percent-encoding
+    encoded = "https://" + "".join(
+        f"%{ord(c):02X}" if c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_~" else c
+        for c in domain
+    ) + path
+    techniques.append({
+        "name":    "Percent-encoding (URL encoding)",
+        "result":  encoded,
+        "purpose": "Domain looks scrambled but browsers decode it transparently",
+    })
+
+    # 3. Open redirect abuse
+    techniques.append({
+        "name":    "Open redirect (Google)",
+        "result":  f"https://www.google.com/url?sa=t&url={url}",
+        "purpose": "Link passes as google.com; victim lands on attacker site",
+    })
+
+    # 4. Shortener simulation
+    short_hash = hashlib.md5(url.encode()).hexdigest()[:6]
+    techniques.append({
+        "name":    "URL shortener simulation",
+        "result":  f"https://bit.ly/{short_hash}",
+        "purpose": "Completely hides destination; bypasses reputation filters",
+    })
+
+    # 5. Data URI (for email HTML)
+    data_uri = f"data:text/html;base64,{base64.b64encode(b'<html><body>Redirecting...</body></html>').decode()}"
+    techniques.append({
+        "name":    "Data URI redirect",
+        "result":  data_uri[:80] + "...",
+        "purpose": "Embedded HTML in the URL itself — no domain to block",
+    })
+
+    # 6. Subdomain spoofing
+    techniques.append({
+        "name":    "Subdomain spoofing",
+        "result":  f"https://{domain}.attacker-server.com{path}",
+        "purpose": "Victim sees legitimate brand at the start; real domain is attacker-server.com",
+    })
+
+    # 7. Homoglyph (Cyrillic substitute for 'a' and 'e')
+    homoglyph_domain = domain.replace("a", "а").replace("e", "е")
+    techniques.append({
+        "name":    "Homoglyph / IDN homograph",
+        "result":  f"https://{homoglyph_domain}{path}",
+        "purpose": "Visually identical to original; different Unicode code points",
+    })
+
+    return techniques
