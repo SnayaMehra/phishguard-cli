@@ -12,6 +12,7 @@ from scanner.ssl_check import analyze_ssl_security, get_ssl_details
 from scanner.domain_check import analyze_domain_structure, detect_numeric_tricks
 from scanner.whois_check import analyze_whois_security, get_registrar_info
 from utils.risk_score import advanced_risk_score, risk_breakdown
+from phishing_kit import run_phishing_kit              # ← NEW
 
 from rich.console import Console
 from rich.panel import Panel
@@ -24,7 +25,7 @@ console = Console()
 
 def scanning_animation():
     for i in range(3):
-        console.print("[bold red]Scanning" + "." * (i+1))
+        console.print("[bold red]Scanning" + "." * (i + 1))
         time.sleep(0.4)
         console.clear()
 
@@ -142,7 +143,7 @@ def phishing_awareness_demo():
     ))
 
 
-#  MAIN FUNCTION
+# ── MAIN FUNCTION ──────────────────────────────────────────────────────────────
 def main():
     console.clear()
     print_welcome_banner()
@@ -151,6 +152,7 @@ def main():
         "[bold cyan]Choose an option:\n"
         "1. Scan a website\n"
         "2. Phishing Awareness Demo\n"
+        "3. Phishing Kit (Lab / Research)\n"      # ← NEW
         "Choice ➜ [/bold cyan]"
     )
 
@@ -185,15 +187,15 @@ def main():
         table.add_column("Parameter", style="cyan")
         table.add_column("Result", style="magenta")
 
-        table.add_row("SSL Secure", "✔ Yes" if ssl_status else "✘ No")
-        table.add_row("Using IP", "Yes" if ip_status else "No")
-        table.add_row("WHOIS Registered", "Yes" if whois_status else "Suspicious")
-        table.add_row("Domain Age", f"{domain_age} years" if domain_age else "N/A")
-        table.add_row("Registrar", str(registrar))
-        table.add_row("URL Pattern Score", str(pattern_score))
-        table.add_row("SSL Risk Score", str(ssl_risk_score))
-        table.add_row("WHOIS Risk Score", str(whois_risk_score))
-        table.add_row("Structure Score", str(structure_score))
+        table.add_row("SSL Secure",          "✔ Yes" if ssl_status else "✘ No")
+        table.add_row("Using IP",            "Yes" if ip_status else "No")
+        table.add_row("WHOIS Registered",    "Yes" if whois_status else "Suspicious")
+        table.add_row("Domain Age",          f"{domain_age} years" if domain_age else "N/A")
+        table.add_row("Registrar",           str(registrar))
+        table.add_row("URL Pattern Score",   str(pattern_score))
+        table.add_row("SSL Risk Score",      str(ssl_risk_score))
+        table.add_row("WHOIS Risk Score",    str(whois_risk_score))
+        table.add_row("Structure Score",     str(structure_score))
         table.add_row("Numeric Trick Score", str(numeric_score))
 
         console.print(table)
@@ -211,6 +213,9 @@ def main():
 
     elif choice == '2':
         phishing_awareness_demo()
+
+    elif choice == '3':                   # ← NEW
+        run_phishing_kit()                # ← NEW
 
     else:
         console.print("[bold red]Invalid option selected.[/bold red]")
