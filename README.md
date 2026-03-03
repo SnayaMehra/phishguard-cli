@@ -11,21 +11,28 @@ This project demonstrates how phishing detection logic can be automated using sy
 
 ## Features
 
-- SSL certificate validation
+- SSL certificate validation (real-time handshake check)
 - Detection of IP-based URLs
 - WHOIS domain registration verification
-- Basic domain age detection
-- Automated risk scoring system
-- Clean command-line interface
+- Domain age extraction from WHOIS data
+- Registrar detection
+- URL pattern-based anomaly scoring
+- Suspicious TLD flagging
+- Subdomain abuse detection
+- Numeric trick detection (e.g., g00gle-style spoofing)
+- Weighted modular risk scoring engine
+- Structured CLI output (Ultra Edition mode)
 
 ## Enhanced Analysis Modules
 
-- URL pattern analysis (length, special characters, suspicious TLDs)
-- Domain structure analysis (subdomain abuse detection)
-- Numeric trick detection in domains
-- Registrar extraction from WHOIS data
-- Modular advanced weighted risk scoring
-- Risk breakdown transparency
+- URL length analysis
+- Special character density check
+- Suspicious TLD identification
+- Deep subdomain structure analysis
+- Registrar extraction from WHOIS metadata
+- SSL validation scoring
+- Domain age-based trust modeling
+- Transparent risk breakdown summary
 
 The tool provides a final verdict:
 
@@ -44,6 +51,8 @@ Example scan:
 Choose an option:
 1. Scan a website
 2. Phishing Awareness Demo
+3. Phishing Kit (Lab / Research)
+Ctrl+C to Exit
 
 Choice ➜ 1
 
@@ -75,15 +84,13 @@ FINAL VERDICT ➜ LOW RISK
 ---
 
 
-## Enhanced versions may also display:
+## Additional Output Modes
 
-- Registrar information  
-- URL pattern risk score  
-- SSL risk score  
-- WHOIS risk score  
-- Domain structure score  
-- Numeric trick score  
-- Risk breakdown summary  
+- Depending on configuration and enhancements, the tool may also display:
+- Detailed risk breakdown table
+- Weighted score contribution per module
+- Pattern anomaly reasoning
+- Awareness simulation output (Demo Mode)
 
 ---
 
@@ -99,8 +106,9 @@ FINAL VERDICT ➜ LOW RISK
 
 ### Optional enhancements may use:
 
-- `rich` (for improved CLI output)
-- Additional scoring modules
+- `rich` (enhanced CLI visuals)
+- Colored terminal output
+- Extended scoring modules
 
 ---
 
@@ -141,24 +149,27 @@ The tool will scan the URL and display a calculated risk verdict along with inte
 
 ## How It Works
 
-1. Parses the input URL  
-2. Extracts the domain  
-3. Attempts SSL handshake verification  
-4. Checks whether the URL uses an IP address  
-5. Performs WHOIS lookup  
-6. Extracts domain age  
-7. Applies pattern-based and structural heuristics  
-8. Calculates a weighted risk score  
-9. Displays final verdict  
+1. Parses the input URL
+2. Extracts and normalizes the domain
+3. Performs SSL handshake validation
+4. Checks for raw IP usage
+5. Executes WHOIS lookup via system tool
+6. Extracts domain age & registrar
+7. Applies URL pattern heuristics
+8. Detects numeric substitution tricks
+9. Analyzes subdomain structure
+10. Calculates weighted risk score
+11. Displays structured verdict
 
 The risk score increases if:
 
-- SSL is invalid  
-- The URL uses a raw IP  
-- Domain is unregistered  
-- Domain is newly registered  
-- Suspicious URL patterns are detected  
-- Domain structure appears manipulated  
+- SSL verification fails
+- The URL uses a raw IP address
+- WHOIS data is missing or domain is unregistered
+- Domain age is extremely new
+- Suspicious URL patterns are detected
+- Excessive subdomains are present
+- Numeric character spoofing is detected
 
 ---
 
@@ -168,10 +179,10 @@ Contributions are welcome.
 
 You can contribute by:
 
-- Improving detection logic
-- Enhancing scoring models
-- Refactoring modules
-- Improving documentation
+- Improving detection heuristics
+- Enhancing risk transparency
+- Refactoring scanner modules
+- Improving CLI UX
 - Adding new security analysis techniques
 
 Please open an issue before submitting major changes.
@@ -181,6 +192,6 @@ Please open an issue before submitting major changes.
 This tool is developed strictly for educational and cybersecurity awareness purposes only.  
 Do not use this project for malicious activities.
 
-The authors are not responsible for misuse of this software.
+The maintainers are not responsible for misuse of this software.
 
 ---

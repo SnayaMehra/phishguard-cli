@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+
+import sys
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -6,12 +9,25 @@ import ssl
 import urllib.parse
 import subprocess
 import time
-from utils.domain_age import extract_domain_age
 
+# Python version check (Linux safety)
+if sys.version_info < (3, 8):
+    print("Python 3.8+ required.")
+    sys.exit(1)
+
+# Local imports (case-sensitive safe)
+from utils.domain_age import extract_domain_age
 from scanner.ssl_check import analyze_ssl_security, get_ssl_details
 from scanner.domain_check import analyze_domain_structure, detect_numeric_tricks
 from scanner.whois_check import analyze_whois_security, get_registrar_info
 from utils.risk_score import advanced_risk_score, risk_breakdown
+
+# Safe import for phishing kit (prevents Linux crash)
+try:
+    from phishing_kit import run_phishing_kit as original_run_phishing_kit
+except ImportError:
+    def original_run_phishing_kit():
+        print("Phishing kit module not found.")
 
 from rich.console import Console
 from rich.panel import Panel
@@ -22,9 +38,18 @@ from rich import box
 console = Console()
 
 
+# ✅ SAFE WRAPPER (Ctrl+C handling for phishing kit)
+def run_phishing_kit():
+    try:
+        original_run_phishing_kit()
+    except KeyboardInterrupt:
+        console.print("\n[bold yellow]Phishing kit cancelled by user.[/bold yellow]")
+        console.print("[bold cyan]Returning to main menu...[/bold cyan]")
+
+
 def scanning_animation():
     for i in range(3):
-        console.print("[bold red]Scanning" + "." * (i+1))
+        console.print("[bold red]Scanning" + "." * (i + 1))
         time.sleep(0.4)
         console.clear()
 
@@ -130,91 +155,115 @@ def enhanced_risk_engine(base_score, pattern_score):
 
 
 def phishing_awareness_demo():
-    console.print(Panel(
-        "⚠️ PHISHING AWARENESS MODE ⚠️\n\n"
-        "Common phishing red flags:\n"
-        "- Urgent language (\"Act Now!\")\n"
-        "- Suspicious domains\n"
-        "- Login pages over HTTP\n"
-        "- Unexpected attachments\n"
-        "- Misspelled brand names\n",
-        style="bold yellow"
-    ))
-
-
-#  MAIN FUNCTION
-def main():
-    console.clear()
-    print_welcome_banner()
-
-    choice = console.input(
-        "[bold cyan]Choose an option:\n"
-        "1. Scan a website\n"
-        "2. Phishing Awareness Demo\n"
-        "Choice ➜ [/bold cyan]"
+    console.print(
+        Panel(
+            "⚠️ PHISHING AWARENESS MODE ⚠️\n\n"
+            "Common phishing red flags:\n"
+            "- Urgent language (\"Act Now!\")\n"
+            "- Suspicious domains\n"
+            "- Login pages over HTTP\n"
+            "- Unexpected attachments\n"
+            "- Misspelled brand names\n",
+            style="bold yellow"
+        )
     )
 
-    if choice == '1':
-        url = console.input("[bold cyan]Enter Target URL ➜ [/bold cyan]").strip()
 
-        if not url.startswith(("http://", "https://")):
-            url = "http://" + url
+# ── MAIN FUNCTION ─────────────────────────────────────────
 
-        parsed = urllib.parse.urlparse(url)
-        domain = parsed.hostname
+def main():
+    while True:   # ✅ Allows return to menu instead of full exit
+        console.clear()
+        print_welcome_banner()
 
-        if not domain:
-            console.print("[bold red]Invalid URL format![/bold red]")
-            return
+        try:
+            choice = console.input(
+                "[bold cyan]Choose an option:\n"
+                "1. Scan a website\n"
+                "2. Phishing Awareness Demo\n"
+                "3. Phishing Kit (Lab / Research)\n"
+                "Ctrl+C to Exit\n"
+                "Choice ➜ [/bold cyan]"
+            )
+        except KeyboardInterrupt:
+            console.print("\n[bold red]Exiting PhishGuard safely...[/bold red]")
+            sys.exit(0)
 
-        scanning_animation()
+        if choice == '1':
+            try:
+                url = console.input("[bold cyan]Enter Target URL ➜ [/bold cyan]").strip()
+            except KeyboardInterrupt:
+                continue
 
-        ssl_status = check_ssl(domain)
-        ip_status = check_ip_url(domain)
-        whois_status, domain_age = whois_lookup(domain)
-        pattern_score = analyze_url_patterns(url, domain)
+            if not url.startswith(("http://", "https://")):
+                url = "http://" + url
 
-        ssl_risk_score = analyze_ssl_security(domain)
-        ssl_details = get_ssl_details(domain)
-        structure_score = analyze_domain_structure(domain)
-        numeric_score = detect_numeric_tricks(domain)
-        whois_risk_score = analyze_whois_security(domain)
-        registrar = get_registrar_info(domain)
+            parsed = urllib.parse.urlparse(url)
+            domain = parsed.hostname
 
-        table = Table(title="SCAN RESULTS", box=box.DOUBLE_EDGE)
-        table.add_column("Parameter", style="cyan")
-        table.add_column("Result", style="magenta")
+            if not domain:
+                console.print("[bold red]Invalid URL format![/bold red]")
+                time.sleep(1.5)
+                continue
 
-        table.add_row("SSL Secure", "✔ Yes" if ssl_status else "✘ No")
-        table.add_row("Using IP", "Yes" if ip_status else "No")
-        table.add_row("WHOIS Registered", "Yes" if whois_status else "Suspicious")
-        table.add_row("Domain Age", f"{domain_age} years" if domain_age else "N/A")
-        table.add_row("Registrar", str(registrar))
-        table.add_row("URL Pattern Score", str(pattern_score))
-        table.add_row("SSL Risk Score", str(ssl_risk_score))
-        table.add_row("WHOIS Risk Score", str(whois_risk_score))
-        table.add_row("Structure Score", str(structure_score))
-        table.add_row("Numeric Trick Score", str(numeric_score))
+            scanning_animation()
 
-        console.print(table)
+            ssl_status = check_ssl(domain)
+            ip_status = check_ip_url(domain)
+            whois_status, domain_age = whois_lookup(domain)
+            pattern_score = analyze_url_patterns(url, domain)
 
-        base_score = risk_score(ssl_status, ip_status, whois_status, domain_age)
-        result = enhanced_risk_engine(base_score, pattern_score)
+            ssl_risk_score = analyze_ssl_security(domain)
+            ssl_details = get_ssl_details(domain)
+            structure_score = analyze_domain_structure(domain)
+            numeric_score = detect_numeric_tricks(domain)
+            whois_risk_score = analyze_whois_security(domain)
+            registrar = get_registrar_info(domain)
 
-        color = "green"
-        if result == "MEDIUM RISK":
-            color = "yellow"
-        elif result == "HIGH RISK":
-            color = "bold red"
+            table = Table(title="SCAN RESULTS", box=box.DOUBLE_EDGE)
+            table.add_column("Parameter", style="cyan")
+            table.add_column("Result", style="magenta")
 
-        console.print(Panel(f"FINAL VERDICT ➜ {result}", style=color))
+            table.add_row("SSL Secure", "✔ Yes" if ssl_status else "✘ No")
+            table.add_row("Using IP", "Yes" if ip_status else "No")
+            table.add_row("WHOIS Registered", "Yes" if whois_status else "Suspicious")
+            table.add_row("Domain Age", f"{domain_age} years" if domain_age else "N/A")
+            table.add_row("Registrar", str(registrar))
+            table.add_row("URL Pattern Score", str(pattern_score))
+            table.add_row("SSL Risk Score", str(ssl_risk_score))
+            table.add_row("WHOIS Risk Score", str(whois_risk_score))
+            table.add_row("Structure Score", str(structure_score))
+            table.add_row("Numeric Trick Score", str(numeric_score))
 
-    elif choice == '2':
-        phishing_awareness_demo()
+            console.print(table)
 
-    else:
-        console.print("[bold red]Invalid option selected.[/bold red]")
+            base_score = risk_score(ssl_status, ip_status, whois_status, domain_age)
+            result = enhanced_risk_engine(base_score, pattern_score)
+
+            color = "green"
+            if result == "MEDIUM RISK":
+                color = "yellow"
+            elif result == "HIGH RISK":
+                color = "bold red"
+
+            console.print(Panel(f"FINAL VERDICT ➜ {result}", style=color))
+            console.input("\nPress Enter to return to menu...")
+
+        elif choice == '2':
+            phishing_awareness_demo()
+            console.input("\nPress Enter to return to menu...")
+
+        elif choice == '3':
+            run_phishing_kit()
+
+        else:
+            console.print("[bold red]Invalid option selected.[/bold red]")
+            time.sleep(1.5)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        console.print("\n[bold red]Exiting PhishGuard safely...[/bold red]")
+        sys.exit(0)
